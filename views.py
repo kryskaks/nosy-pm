@@ -33,7 +33,7 @@ def login():
 		flash("Error logging in: %s" % response.message )
 		return redirect(url_for("login"))
 
-	return redirect(url_for("index", user = response.data))
+	return redirect(url_for("index"))
 
 @app.route('/logout')
 @can_you
