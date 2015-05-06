@@ -1,4 +1,4 @@
-from infodesk import logger
+from nosypm import logger
 from models import User, Merchant
 from decimal import Decimal
 from copy import deepcopy
@@ -7,6 +7,8 @@ import os
 from config import TMP_DIR
 from datetime import datetime
 import constants
+from w1_api import W1Api
+from helpers import CurrencyHelper
 
 class ControllerResponse(object):
 	def __init__(self, result, data = None, message = "Ok"):
@@ -15,13 +17,8 @@ class ControllerResponse(object):
 		self.message = message
 
 class Controller(object):
-	def __init__(self, uid = None, user = None):
-		if not uid and not user:
-			self.user = None		
-		elif not uid:
-			self.user = user
-		else:
-			self.user = User.get_by_id(uid)
+	def __init__(self, user):
+		self.user = user
 		self.log = logger
 
 	def call(self, *args, **kwds):
@@ -32,7 +29,7 @@ class Controller(object):
 			return ControllerResponse(constants.ControllerResult.Ok, data = data)			
 		except Exception, ex:			
 			self.log.exception("User %s finished %s with error" % (self.user, self.__class__.__name__))
-			return ControllerResponse(constants.ControllerResult.Error, message = str(ex))						
+			return ControllerResponse(constants.ControllerResult.Error, message = unicode(ex))						
 
 	def _call(self):
 		raise NotImplemented("_call")
@@ -49,7 +46,7 @@ class LoginController(object):
 			return ControllerResponse(constants.ControllerResult.Ok, data = data)			
 		except Exception, ex:			
 			self.log.exception("Username %s finished login with error" % username)
-			return ControllerResponse(constants.ControllerResult.Error, message = str(ex))				
+			return ControllerResponse(constants.ControllerResult.Error, message = unicode(ex))				
 
 	def _call(self, username, password, session):		
 		user = User.try_get_by_login(username)		
@@ -58,10 +55,27 @@ class LoginController(object):
 
 		if not user.verify_password(password):
 			raise Exception("Invalid password for %s" % username)
-
-		self.log.info("Session: %s" % session)
+		
 		session["uid"] = user.id
 		user.last_logged_in = datetime.now()
-		user.save(only = [User.last_logged_in])
-		self.log.info("Session: %s" % session)
+		user.save(only = [User.last_logged_in])		
 		return user
+
+class BalanceController(Controller):	
+	def _call(self):
+		api = W1Api(self.user.merchant.token)
+		w1_response = api.balance()		
+		self.log.debug(w1_response.json())
+
+		return [ dict((key, b[key]) for key in ["CurrencyId", "AvailableAmount"]) for b in w1_response.json() ]
+
+class FindInvoiceController(Controller):
+	def _call(self, invoice_id, order_id):
+		api = W1Api(self.user.merchant.token)
+		w1_response = api.find_invoice(invoice_id, order_id).json()	
+		self.log.debug(w1_response)
+		if "Error" in w1_response:
+			raise Exception(w1_response["ErrorDescription"])
+		return w1_response
+
+		

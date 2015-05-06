@@ -67,6 +67,9 @@ class User(_Model):
 	def verify_password(self, password):
 		return pbkdf2_sha256.verify(password, self.password)
 
+	def __str__(self):
+		return "User %s, created %s" % (self.login, self.created.strftime("%d.%m.%Y %H:%M:%S"))
+
 create_tables_list = [Merchant, User]
 drop_tables_list = [User, Merchant]
 

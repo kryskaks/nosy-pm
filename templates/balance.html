@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block header %}
+Баланс
+{% endblock %}
+{% block content %}
+
+<ul>	
+	{% for b in balances %}
+	<li>{{b.AvailableAmount}} {{b.Currency}}</li>
+	{% endfor %}
+</ul>
+{% endblock %}

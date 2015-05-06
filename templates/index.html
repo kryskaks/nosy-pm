@@ -4,6 +4,10 @@
 {% endblock %}
 {% block content %}
 
-
+<ul>
+	<li><a href="{{url_for('balance')}}">Баланс</a></li>
+	<li><a href="{{url_for('find_invoice')}}">Поиск инвойса</a></li>
+	<li><a href="{{url_for('find_transfer')}}">Поиск вывода</a></li>
+</ul>
 
 {% endblock %}
