@@ -10,3 +10,7 @@ class LoginForm(Form):
 class InvoiceForm(Form):
 	invoice_id = TextField(u'InvoiceId', [Length(max=150)])
 	order_id = TextField(u'OrderId', [Length(max=150)])
+
+class PaymentForm(Form):
+	payment_id = TextField(u'PaymentId', [Length(max=150)])
+	external_id = TextField(u'ExternalId', [Length(max=150)])

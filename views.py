@@ -6,17 +6,16 @@ from flask import render_template, request, redirect, url_for, jsonify, session,
 from nosypm import app
 import constants
 from models import User, Merchant
-from controllers import LoginController, BalanceController, FindInvoiceController
+from controllers import LoginController, BalanceController, FindInvoiceController, FindPaymentController
 from datetime import datetime
-from forms import LoginForm, InvoiceForm
+from forms import LoginForm, InvoiceForm, PaymentForm
 import helpers
 
 def can_you(func):
 	@wraps(func)
 	def wrapper(*args, **kwds):
 		uid = session.get("uid", None)
-		if not uid:
-			#return render_template("login.html", login_form = LoginForm(), referrer = url_for(func.__name__, *args, **kwds))
+		if not uid:			
 			return redirect(url_for("login"))
 
 		user = User.get_by_id(session.get("uid"))
@@ -65,11 +64,19 @@ def find_invoice(user):
 	if response.result != constants.ControllerResult.Ok:
 		flash(response.message)
 		return redirect(url_for("find_invoice"))
+	#response.data.update({"Currency": helpers.CurrencyHelper.get_currency_desc(response.data["CurrencyId"])})
 	return render_template("invoice.html", user = user, invoice_form = InvoiceForm(), result = response.data)
 	
-@app.route('/transfer', methods = ["GET", "POST"])
+@app.route('/payment', methods = ["GET", "POST"])
 @can_you
-def find_transfer(user):
-	return 'Transfer for %s' % user
+def find_payment(user):
+	if request.method == "GET":
+		return render_template("payment.html", user = user, payment_form = PaymentForm(), result = None)
+	response = FindPaymentController(user).call(request.form.get("payment_id", ""), request.form.get("external_id", ""))
+	if response.result != constants.ControllerResult.Ok:
+		flash(response.message)
+		return redirect(url_for("find_payment"))
+	#response.data.update({"Currency": helpers.CurrencyHelper.get_currency_desc(response.data["CurrencyId"])})
+	return render_template("payment.html", user = user, payment_form = PaymentForm(), result = response.data)
 
 

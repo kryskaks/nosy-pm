@@ -78,4 +78,13 @@ class FindInvoiceController(Controller):
 			raise Exception(w1_response["ErrorDescription"])
 		return w1_response
 
+class FindPaymentController(Controller):
+	def _call(self, payment_id, external_id):
+		api = W1Api(self.user.merchant.token)
+		w1_response = api.find_payment(payment_id, external_id).json()	
+		self.log.debug(w1_response)
+		if "Error" in w1_response:
+			raise Exception(w1_response["ErrorDescription"])
+		return w1_response		
+
 		
